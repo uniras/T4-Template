@@ -14,26 +14,56 @@
     #endif
 #>
 <#+
+    //Debugオプションが有効かどうかの判別フラグ
+    bool SHARPTEMPLATET4_DEBUG;
+
+    //コメント文字列、デリミタ文字列の定義。デリミタ文字列はそのまま記述すると実際のデリミタとして動作しようとするので文字列結合で定義。
+    string StartComment = "/*";
+    string EndComment = "*/";
+    string LineComment = "//";
+    string DisableStartComment = "/**";
+    string DisableEndComment = "**/";
+    string DisableLineComment = "///";
+    string StartDelim = "<" + "#";
+    string EndDelim = "#" + ">";
+
+    /*
+       SharpTemplate.t4の一連の処理を実行します、通常はインクルードした時点で自動的に呼ばれますが、
+       TemplateディレクティブのcompilerOptions属性でDISABLE_AUTOLOADシンボルを有効にした場合は明示的に呼び出す必要があります。
+    */
     void SharpTemplateT4Genarate(ITextTemplatingEngineHost Host) {
-        //Debugオプションが有効かどうかの判別フラグ
+        //今まで出力しようとしていたテキストを破棄
+        GenerationEnvironment.Length = 0;
+        ClearIndent();
+
+        //コード生成して出力
+        string ConvertTemplate = SharpTemplateT4Convert(Host);
+        WriteLine(SharpTemplateT4Compile(ConvertTemplate, Host));
+
+        //Debugオプションが有効なら置換処理後のテンプレートをコメントアウトした状態で出力
+        if (SHARPTEMPLATET4_DEBUG){
+            PushIndent(LineComment);
+            WriteLine(ConvertTemplate);
+            ClearIndent();
+        }
+
+        //残りの出力をコメントアウトした状態で出力。
+        PushIndent(LineComment);
+    }
+
+    /*
+        インクルード元テンプレートの置換処理を実行します
+    */
+    string SharpTemplateT4Convert(ITextTemplatingEngineHost Host) {
+        //Debugオプション判定フラグの設定
         #if DEBUG
-        bool SHARPTEMPLATET4_DEBUG  = true;
+        SHARPTEMPLATET4_DEBUG  = true;
         #else
-        bool SHARPTEMPLATET4_DEBUG  = false;
+        SHARPTEMPLATET4_DEBUG  = false;
         #endif
 
         //このファイルをインクルードした元のテンプレートファイルを読み込み    
         StringBuilder PreTemplate = new StringBuilder(File.ReadAllText(Host.TemplateFile));
-
-        //コメント文字列、デリミタ文字列の定義。デリミタ文字列はそのまま記述すると実際のデリミタとして動作しようとするので文字列結合で定義。
-        string StartComment = "/*";
-        string EndComment = "*/";
-        string LineComment = "//";
-        string DisableStartComment = "/**";
-        string DisableEndComment = "**/";
-        string DisableLineComment = "///";
-        string StartDelim = "<" + "#";
-        string EndDelim = "#" + ">";
 
         //読み込んだテンプレートの先頭にDebugオプション判定用のシンボルを定義するコードと、生成処理判定用のシンボルをtrueの状態で定義するコードを挿入
         #if !DISABLE_SYMBOL
@@ -71,25 +101,17 @@
         PreTemplate.Replace(EndDelim + EndComment, EndDelim);
         PreTemplate.Replace(LineComment + StartDelim, StartDelim);
 
+        return PreTemplate.ToString();
+    }
+
+    /*
+        置換したテンプレートをコンパイルしてコードを生成します
+    */
+    string SharpTemplateT4Compile(string Template, ITextTemplatingEngineHost Host) {
         //変換したテンプレートを別のT4エンジンで生成処理
         Engine T4Engine = new Engine();
-        string Output = T4Engine.ProcessTemplate(PreTemplate.ToString(), Host);
+        string Output = T4Engine.ProcessTemplate(Template, Host);
 
-        //今まで出力しようとしていた文字列を破棄
-        GenerationEnvironment.Length = 0;
-        ClearIndent();
-
-        //生成したコードを出力
-        WriteLine(Output);
-
-        //Debugオプションが有効なら置換処理後のテンプレートをコメントアウトした状態で出力
-        if (SHARPTEMPLATET4_DEBUG){
-            PushIndent(LineComment);
-            WriteLine(PreTemplate.ToString());
-            ClearIndent();
-        }
-
-        //残りの出力をコメントアウトした状態で出力。
-        PushIndent(LineComment);
+        return Output;
     }
 #>
