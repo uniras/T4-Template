@@ -1,0 +1,95 @@
+﻿<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="Microsoft.VisualStudio.TextTemplating" #>
+<#
+    //生成処理判定用のフラグをfalseの状態で定義
+    const bool SHARPTEMPLATET4_GENERATE = false;
+    //ワーニング対策のため、変数の値を出力(SharpTemplateT4Genarate関数により出力は破棄されます)
+    WriteLine("//SHARPTEMPLATET4_GENERATE=" + SHARPTEMPLATET4_GENERATE.ToString());
+
+    #if !DISABLE_AUTOLOAD
+    SharpTemplateT4Genarate(this.Host);
+    #endif
+#>
+<#+
+    void SharpTemplateT4Genarate(ITextTemplatingEngineHost Host) {
+        //Debugオプションが有効かどうかの判別フラグ
+        #if DEBUG
+        bool SHARPTEMPLATET4_DEBUG  = true;
+        #else
+        bool SHARPTEMPLATET4_DEBUG  = false;
+        #endif
+
+        //このファイルをインクルードした元のテンプレートファイルを読み込み    
+        StringBuilder PreTemplate = new StringBuilder(File.ReadAllText(Host.TemplateFile));
+
+        //コメント文字列、デリミタ文字列の定義。デリミタ文字列はそのまま記述すると実際のデリミタとして動作しようとするので文字列結合で定義。
+        string StartComment = "/*";
+        string EndComment = "*/";
+        string LineComment = "//";
+        string DisableStartComment = "/**";
+        string DisableEndComment = "**/";
+        string DisableLineComment = "///";
+        string StartDelim = "<" + "#";
+        string EndDelim = "#" + ">";
+
+        //読み込んだテンプレートの先頭にDebugオプション判定用のシンボルを定義するコードと、生成処理判定用のシンボルをtrueの状態で定義するコードを挿入
+        #if !DISABLE_SYMBOL
+        if(SHARPTEMPLATET4_DEBUG){
+            PreTemplate.Insert(0, "\r\n");
+            PreTemplate.Insert(0, "#define SHARPTEMPLATET4_DEBUG");
+            PreTemplate.Insert(0, "\r\n");
+            PreTemplate.Insert(0, "#define DEBUG");
+        }else{
+            PreTemplate.Insert(0, "\r\n");
+            PreTemplate.Insert(0, "#undef DEBUG");
+        }
+        PreTemplate.Insert(0, "\r\n");
+        PreTemplate.Insert(0, "#define SHARPTEMPLATET4_GENERATE");
+        #endif
+
+        //Debugオプション判定用のフラグの定義と生成処理判定用のフラグをtrueの状態で定義するコードを挿入
+        //ワーニング対策のため、変数を出力するコードを記述の上でその出力を破棄する
+        PreTemplate.Insert(0, "\r\n");
+        PreTemplate.Insert(0, StartDelim + "GenerationEnvironment.Length = 0;" + EndDelim);
+        PreTemplate.Insert(0, "\r\n");
+        PreTemplate.Insert(0, LineComment + "SHARPTEMPLATET4_DEBUG=" + StartDelim + "= SHARPTEMPLATET4_DEBUG" + EndDelim);
+        PreTemplate.Insert(0, "\r\n");
+        PreTemplate.Insert(0, StartDelim + "const bool SHARPTEMPLATET4_DEBUG = " + SHARPTEMPLATET4_DEBUG.ToString().ToLower() + ";" + EndDelim);
+        PreTemplate.Insert(0, "\r\n");
+        PreTemplate.Insert(0, LineComment + "SHARPTEMPLATET4_GENERATE=" + StartDelim + "= SHARPTEMPLATET4_GENERATE" + EndDelim);
+        PreTemplate.Insert(0, "\r\n");
+        PreTemplate.Insert(0, StartDelim + "const bool SHARPTEMPLATET4_GENERATE = true;" + EndDelim);
+
+        //置換処理
+        PreTemplate.Replace(DisableLineComment + StartDelim, StartDelim + LineComment);
+        PreTemplate.Replace(DisableStartComment + StartDelim, StartDelim + StartComment);
+        PreTemplate.Replace(EndDelim + DisableEndComment, EndComment + EndDelim);
+        PreTemplate.Replace(StartComment + StartDelim, StartDelim);
+        PreTemplate.Replace(EndDelim + EndComment, EndDelim);
+        PreTemplate.Replace(LineComment + StartDelim, StartDelim);
+
+        //変換したテンプレートを別のT4エンジンで生成処理
+        Engine T4Engine = new Engine();
+        string Output = T4Engine.ProcessTemplate(PreTemplate.ToString(), Host);
+
+        //今まで出力しようとしていた文字列を破棄
+        GenerationEnvironment.Length = 0;
+        ClearIndent();
+
+        //生成したコードを出力
+        WriteLine(Output);
+
+        //Debugオプションが有効なら置換処理後のテンプレートをコメントアウトした状態で出力
+        if (SHARPTEMPLATET4_DEBUG){
+            PushIndent(LineComment);
+            WriteLine(PreTemplate.ToString());
+            ClearIndent();
+        }
+
+        //残りの出力をコメントアウトした状態で出力。
+        PushIndent(LineComment);
+    }
+#>
