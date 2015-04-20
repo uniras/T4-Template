@@ -10,7 +10,7 @@
     WriteLine("//SHARPTEMPLATET4_GENERATE=" + SHARPTEMPLATET4_GENERATE.ToString());
 
     #if !DISABLE_AUTOLOAD
-    erate(this.Host);
+    SharpTemplateT4Generate(this.Host);
     #endif
 #>
 <#+
