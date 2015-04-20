@@ -33,7 +33,7 @@ SharpTemplate.t4は、インクルードすることでC#コードとして正�
 
 プロジェクトにC#ファイルを作成または追加後、ファイルのプロパティを開き、ビルドアクションを"なし"に、カスタムツールには"TextTemplatingFileGenerator"と入れてください。
 
-SharpDevelop, Monodevelopも同様にBuild Actionを"None"に、Custom Toolには"TextTemplatingFileGenerator"と入れてください。
+SharpDevelop, Monodevelopも同様にBuild actionを"None"に、Custom Toolには"TextTemplatingFileGenerator"と入れてください。
 
 3.おまじない
 
