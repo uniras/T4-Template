@@ -31,11 +31,9 @@ SharpTemplate.t4は、インクルードすることでC#コードとして正�
 
 2.設定
 
-VisualStudioの場合、テンプレートの拡張子が.csのままでは不便なので適当な拡張子(.cstとか)をツール-オプション-テキストエディタ-ファイル拡張子でVisual C#に設定します。 
+プロジェクトにC#ファイルを作成または追加後、ファイルのプロパティを開き、ビルドアクションを"なし"に、カスタムツールには"TextTemplatingFileGenerator"と入れてください。
 
-SharpDevelop、MonoDevelopの場合、拡張子.cs以外をC#エディタとして利用することは出来ないようなので、結局そのまま.csでコーディングするのが一番便利です。
-
-プロジェクトにファイルを作成後、ファイルのプロパティを開き、カスタムツールの項目にTextTemplatingFileGeneratorと入れてください。
+SharpDevelop, Monodevelopも同様にBuild Actionを"None"に、Custom Toolには"TextTemplatingFileGenerator"と入れてください。
 
 3.おまじない
 
@@ -44,10 +42,6 @@ SharpDevelop、MonoDevelopの場合、拡張子.cs以外をC#エディタとし�
     //<#@ template debug="false" hostSpecific="true" language="C#" #>
 	//<#@ output extension=".generated.cs" #>
     ///<#@ include file="SharpTemplate.t4" #>   
-
-テンプレートの拡張子を.csにする場合は何もしないとクラスの多重定義エラーが発生するので、テンプレートのコードを```#if SHARPTEMPLATET4_GENERATE ～ #endif```で囲んでおきます。
-
-※ただし、VisualStudio,MonoDevelopではシンボルが未定義状態の#if～#endifに囲まれたコードはコメント扱いとなってインテリセンス(コード補完)が使えません…
 
 これで、保存時にT4テンプレートとして変換処理され、C#コードが出力されます。
 
