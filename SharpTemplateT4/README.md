@@ -75,7 +75,7 @@ T4のディレクティブやコントロールブロックを記述するとき
 
 templateレクティブのcompilerOptions属性でC#コンパイラのオプションと同じ方法でシンボルを定義することでSharpTemplateT4の動作を制御することが出来ます。
 
-DISABLE_AUTOLOAD: インクルード時に自動的に処理を実行するのを抑制します。処理を開始するには明示的に```SharpTemplateT4Genarate(this.Host);``` というコードを記述する必要があります。
+DISABLE_AUTOLOAD: インクルード時に自動的に処理を実行するのを抑制します。処理を開始するには明示的に```SharpTemplateT4Generate(this.Host);``` というコードを記述する必要があります。
 
 DISABLE_SYMBOL: SharpTemplate.t4が生成するC#シンボル定義のコードを生成しないようにします。SHARPTEMPLATET4_GENERATEシンボルによるコードの分岐はできなくなります。(変数は利用できます)
 

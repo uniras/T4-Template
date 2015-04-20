@@ -6,11 +6,11 @@
 <#
     //生成処理判定用のフラグをfalseの状態で定義
     const bool SHARPTEMPLATET4_GENERATE = false;
-    //ワーニング対策のため、変数の値を出力(SharpTemplateT4Genarate関数により出力は破棄されます)
+    //ワーニング対策のため、変数の値を出力(SharpTemplateT4Generate関数により出力は破棄されます)
     WriteLine("//SHARPTEMPLATET4_GENERATE=" + SHARPTEMPLATET4_GENERATE.ToString());
 
     #if !DISABLE_AUTOLOAD
-    SharpTemplateT4Genarate(this.Host);
+    erate(this.Host);
     #endif
 #>
 <#+
@@ -31,7 +31,7 @@
        SharpTemplate.t4の一連の処理を実行します、通常はインクルードした時点で自動的に呼ばれますが、
        TemplateディレクティブのcompilerOptions属性でDISABLE_AUTOLOADシンボルを有効にした場合は明示的に呼び出す必要があります。
     */
-    void SharpTemplateT4Genarate(ITextTemplatingEngineHost Host) {
+    void SharpTemplateT4Generate(ITextTemplatingEngineHost Host) {
         //今まで出力しようとしていたテキストを破棄
         GenerationEnvironment.Length = 0;
         ClearIndent();
