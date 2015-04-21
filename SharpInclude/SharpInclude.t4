@@ -1,0 +1,143 @@
+﻿<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="Microsoft.VisualStudio.TextTemplating" #>
+<#@ import namespace="System.Text.RegularExpressions" #> 
+<#+
+    /*
+        ファイルから指定のコード全てを機能ブロックとして取り込みます。
+    */
+    string SharpInclude(string file)
+    {
+        return SharpInclude(file, -1);
+    }
+
+    /*
+       ファイルから指定のコードのうちの(pos+1)番目のコードを機能ブロックとして取り込みます。
+    */
+    string SharpInclude(string file, int pos)
+    {
+        return SharpIncludeFile(file, pos, true, false);
+    }
+
+    /*
+        usingを解析するかどうかを指定し、ファイルから指定のコード全てを機能ブロックとして取り込みます。
+    */
+    string SharpInclude(string file, bool inusing)
+    {
+        return SharpInclude(file, -1, inusing);
+    }
+
+    /*
+        usingを解析するかどうか指定し、ファイルから指定のコードのうちの(pos+1)番目のコードを機能ブロックとして取り込みます。
+    */
+    string SharpInclude(string file, int pos, bool inusing)
+    {
+        return SharpIncludeFile(file, pos, inusing, false);
+    }
+
+    /*
+        複数指定したファイルの指定された全てのコードを機能ブロックとして取り込みます。
+    */
+    string SharpIncludeList(params string[] files)
+    {
+        StringBuilder UsingSource = new StringBuilder();
+        StringBuilder BlockSource = new StringBuilder();
+        System.Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
+        for (int i = 0; i < files.Length; i++)
+        {
+            string src = File.ReadAllText(files[i]);
+            UsingSource.Append(SharpIncludeGetUsingString(src));
+            BlockSource.Append(SharpIncludeString(src, -1, false, true));
+        }
+        return UsingSource.ToString() + "\r\n<" + "#+\r\n" + BlockSource.ToString() + "\r\n#" + ">";
+    }
+
+    /*
+        ファイルから指定のコード全てをそのまま取り込みます。
+    */
+    string SharpMixin(string file)
+    {
+        return SharpMixin(file, -1);
+    }
+
+    /*
+        ファイルから指定のコードのうちの(pos+1)番目のコードをそのまま取り込みます。
+    */
+    string SharpMixin(string file, int pos)
+    {
+        return SharpIncludeFile(file, pos, false, true);
+    }
+
+    /*
+        複数指定したファイルの指定された全てのコードをそのまま取り込みます。
+    */
+    string SharpMixinList(params string[] files)
+    {
+        StringBuilder BlockSource = new StringBuilder();
+        for (int i = 0; i < files.Length; i++)
+        {
+            BlockSource.Append(SharpIncludeFile(files[i], -1, false, true));
+        }
+        return BlockSource.ToString();
+    }
+
+    string SharpIncludeFile(string file, int pos, bool inusing, bool mixin)
+    {
+        System.Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
+        string src = File.ReadAllText(file);
+        return SharpIncludeString(src, pos, inusing, mixin);
+    }
+
+    string SharpIncludeString(string src, int pos, bool inusing, bool mixin)
+    {
+        StringBuilder ret = new StringBuilder();
+        int cnt = 0;
+        Regex regex = new Regex(@"//[<][#]\+?([\s\S]*?)//[#][>]");
+        Match match = regex.Match(src);
+        while (match.Success)
+        {
+            if (pos < 0 || pos == cnt)
+            {
+                Group grp = match.Groups[1];
+                ret.Append(grp);
+            }
+            cnt++;
+            match = match.NextMatch();
+        }
+
+        if (!mixin)
+        {
+            ret.Insert(0, "<" + "#+");
+            ret.Append("#" + ">");
+        }
+
+        if (inusing)
+        {
+            ret.Insert(0, SharpIncludeGetUsingString(src));
+        }
+
+        return ret.ToString();
+    }
+
+    string SharpIncludeGetUsingString(string src)
+    {
+        StringBuilder ret = new StringBuilder();
+        Regex regex = new Regex(@"[ \t]*using[ \t]+([_a-zA-z][_a-zA-Z0-9\.]*);");
+        Match match = regex.Match(src);
+        while (match.Success)
+        {
+            Group grp = match.Groups[1];
+            ret.Append("<" + "#@ import namespace=\"" + grp + "\" #" + ">\r\n");
+            match = match.NextMatch();
+        }
+        return ret.ToString();
+    }
+
+    string SharpIncludeGetUsingFile(string file)
+    {
+        System.Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
+        string src = File.ReadAllText(file);
+        return SharpIncludeGetUsingString(src);
+    }
+#>
