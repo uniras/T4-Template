@@ -43,7 +43,9 @@ SharpInclude.t4をプロジェクトに追加するだけです。
 リファレンス
 ----
 
-SharpIncludeで利用できるメソッドは次の通りです。戻り値は全てstring型になっていますので、式コントロールブロック(```<#= ～ #>```)で呼び出すことで結果がそのまま出力されます。
+SharpIncludeで利用できるメソッドは次の通りです。
+
+戻り値は全てstring型になっていますので、式コントロールブロック(```<#= ～ #>```)で呼び出すことで結果がそのまま出力されます。
 
 >string SharpInclude(string file, int pos, bool inusing)
 
