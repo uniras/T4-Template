@@ -43,9 +43,9 @@ SharpInclude.t4をプロジェクトに追加するだけです。
 リファレンス
 ----
 
-SharpIncludeで利用できるメソッドは次の通りです。
+SharpIncludeで利用できるメソッドは次の通りです。戻り値は全てstring型になっていますので、式コントロールブロック(```<#= ～ #>```)で呼び出すことで結果がそのまま出力されます。
 
->SharpInclude(string file, int pos, bool inusing)
+>string SharpInclude(string file, int pos, bool inusing)
 
 ファイルから指定範囲のコードの全てもしくは一部を機能ブロックとして取り込みます。
 
@@ -54,14 +54,14 @@ pos - 範囲が複数指定されている時に何番目を取り込むのか�
 inusin - usingディレクティブを解析してimportディレクティブを出力するかどうかを指定します。指定しないとusingディレクティブを解析して出力します。
 
 
->SharpIncludeList(params string[] files)
+>string SharpIncludeList(params string[] files)
 
 複数のファイルの指定範囲のコードを全て機能ブロックとして取り込みます。
 
 files - 取り込むファイルをカンマ(,)で区切って複数指定します。
 
 
->SharpMixin(string file, int pos)
+>string SharpMixin(string file, int pos)
 
 ファイルから指定範囲のコードの全てもしくは一部をそのまま取り込みます。
 
@@ -69,7 +69,7 @@ file - 取り込むファイル名を指定します。呼び出し元のテン�
 pos - 範囲が複数指定されている時に何番目を取り込むのかを0オリジン(pos+1番目)で指定します。負の値を渡すと全て取り込みます。指定しないと全て取り込みます。
 
 
->SharpMixinList(params string[] files)
+>string SharpMixinList(params string[] files)
 
 複数のファイルの指定範囲のコードを全て機能ブロックとして取り込みます。
 
