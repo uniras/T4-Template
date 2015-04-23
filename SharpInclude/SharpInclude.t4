@@ -4,6 +4,10 @@
 <#@ import namespace="Microsoft.VisualStudio.TextTemplating" #>
 <#@ import namespace="System.Text.RegularExpressions" #> 
 <#+
+    //SharpInlucde用のデリミタの定義
+    string SharpIncludeStartDelim = "//<++++";
+    string SharpIncludeEndDelim = "//++++>";
+
     /*
         ファイルから指定のコード全てを機能ブロックとして取り込みます。
     */
@@ -93,7 +97,7 @@
     {
         StringBuilder ret = new StringBuilder();
         int cnt = 0;
-        Regex regex = new Regex(@"//[<][#]\+?([\s\S]*?)//[#][>]");
+        Regex regex = new Regex(SharpIncludeStartDelim + @"([\s\S]*?)" + SharpIncludeEndDelim);
         Match match = regex.Match(src);
         while (match.Success)
         {
