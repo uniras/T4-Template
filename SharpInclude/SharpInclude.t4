@@ -5,8 +5,15 @@
 <#@ import namespace="System.Text.RegularExpressions" #> 
 <#+
     //SharpInlucde用のデリミタの定義
-    string SharpIncludeStartDelim = "//<++++";
-    string SharpIncludeEndDelim = "//++++>";
+    class SharpIncludeDefines {
+        public static string SharpIncludeStartDelim = @"//<[\+][\+]+";
+        public static string SharpIncludeEndDelim = @"//[\+][\+]+>";
+
+        public static string StartDelim = "<" + "#";
+        public static string EndDelim = ">" + "#";
+        public static string StartFeatureDelim = StartDelim + "+";
+        public static string EndFeatureDelim = EndDelim;
+    }
 
     /*
         ファイルから指定のコード全てを機能ブロックとして取り込みます。
@@ -54,7 +61,7 @@
             UsingSource.Append(SharpIncludeGetUsingString(src));
             BlockSource.Append(SharpIncludeString(src, -1, false, true));
         }
-        return UsingSource.ToString() + "\r\n<" + "#+\r\n" + BlockSource.ToString() + "\r\n#" + ">";
+        return UsingSource.ToString() + "\r\n" + SharpIncludeDefines.StartFeatureDelim + "\r\n" + BlockSource.ToString() + "\r\n" + SharpIncludeDefines.EndFeatureDelim;
     }
 
     /*
@@ -97,7 +104,7 @@
     {
         StringBuilder ret = new StringBuilder();
         int cnt = 0;
-        Regex regex = new Regex(SharpIncludeStartDelim + @"([\s\S]*?)" + SharpIncludeEndDelim);
+        Regex regex = new Regex(SharpIncludeDefines.SharpIncludeStartDelim + @"([\s\S]*?)" + SharpIncludeDefines.SharpIncludeEndDelim);
         Match match = regex.Match(src);
         while (match.Success)
         {
@@ -112,8 +119,8 @@
 
         if (!mixin)
         {
-            ret.Insert(0, "<" + "#+");
-            ret.Append("#" + ">");
+            ret.Insert(0, SharpIncludeDefines.StartFeatureDelim);
+            ret.Append(SharpIncludeDefines.EndFeatureDelim);
         }
 
         if (inusing)
@@ -132,7 +139,7 @@
         while (match.Success)
         {
             Group grp = match.Groups[1];
-            ret.Append("<" + "#@ import namespace=\"" + grp + "\" #" + ">\r\n");
+            ret.Append(SharpIncludeDefines.StartDelim + "@ import namespace=\"" + grp + "\" " + SharpIncludeDefines.EndDelim + "\r\n");
             match = match.NextMatch();
         }
         return ret.ToString();
