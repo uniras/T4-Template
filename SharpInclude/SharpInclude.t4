@@ -5,52 +5,53 @@
 <#@ import namespace="System.Text.RegularExpressions" #> 
 <#+
     //SharpInlucde用のデリミタの定義
-    class SharpIncludeDefines {
+    class SharpIncludeDefines
+    {
         public static string SharpIncludeStartDelim = @"//<[\+][\+]+";
         public static string SharpIncludeEndDelim = @"//[\+][\+]+>";
 
         public static string StartDelim = "<" + "#";
-        public static string EndDelim = ">" + "#";
+        public static string EndDelim = "#" + ">";
         public static string StartFeatureDelim = StartDelim + "+";
         public static string EndFeatureDelim = EndDelim;
     }
 
     /*
-        ファイルから指定のコード全てを機能ブロックとして取り込みます。
+        指定したファイルの全クラスのコードを機能ブロックとして取り込みます。
     */
     string SharpInclude(string file)
     {
-        return SharpInclude(file, -1);
+        return SharpInclude(file, "", true);
     }
 
     /*
-       ファイルから指定のコードのうちの(pos+1)番目のコードを機能ブロックとして取り込みます。
+        指定したファイルから指定したクラスのコードを機能ブロックとして取り込みます。
     */
-    string SharpInclude(string file, int pos)
+    string SharpInclude(string file, string name)
     {
-        return SharpIncludeFile(file, pos, true, false);
+        return SharpInclude(file, name, true);
     }
 
     /*
-        usingを解析するかどうかを指定し、ファイルから指定のコード全てを機能ブロックとして取り込みます。
+        指定したファイルの全てのクラスのコードを機能ブロックとして取り込みます。
     */
     string SharpInclude(string file, bool inusing)
     {
-        return SharpInclude(file, -1, inusing);
+        return SharpInclude(file, "", inusing);
     }
 
     /*
-        usingを解析するかどうか指定し、ファイルから指定のコードのうちの(pos+1)番目のコードを機能ブロックとして取り込みます。
+       指定したファイルから指定したクラスのコードを機能ブロックとして取り込みます。
     */
-    string SharpInclude(string file, int pos, bool inusing)
+    string SharpInclude(string file, string name, bool inusing)
     {
-        return SharpIncludeFile(file, pos, inusing, false);
+        return SharpIncludeCodeFile(file, name, inusing, false, true);
     }
 
     /*
-        複数指定したファイルの指定された全てのコードを機能ブロックとして取り込みます。
+        複数のファイルの全クラスのコードを機能ブロックとして取り込みます。
     */
-    string SharpIncludeList(params string[] files)
+    string SharpIncludekList(params string[] files)
     {
         StringBuilder UsingSource = new StringBuilder();
         StringBuilder BlockSource = new StringBuilder();
@@ -59,48 +60,176 @@
         {
             string src = File.ReadAllText(files[i]);
             UsingSource.Append(SharpIncludeGetUsingString(src));
-            BlockSource.Append(SharpIncludeString(src, -1, false, true));
+            BlockSource.Append(SharpIncludeCodeString(src, "", false, true, true));
         }
         return UsingSource.ToString() + "\r\n" + SharpIncludeDefines.StartFeatureDelim + "\r\n" + BlockSource.ToString() + "\r\n" + SharpIncludeDefines.EndFeatureDelim;
     }
 
     /*
-        ファイルから指定のコード全てをそのまま取り込みます。
+        指定したファイルの全クラスのコードをそのまま取り込みます。
     */
     string SharpMixin(string file)
     {
-        return SharpMixin(file, -1);
+        return SharpMixin(file, "");
     }
 
     /*
-        ファイルから指定のコードのうちの(pos+1)番目のコードをそのまま取り込みます。
+        指定したファイルから指定したクラスのコードをそのまま取り込みます。
     */
-    string SharpMixin(string file, int pos)
+    string SharpMixin(string file, string name)
     {
-        return SharpIncludeFile(file, pos, false, true);
+        return SharpIncludeCodeFile(file, name, false, true, true);
     }
 
     /*
-        複数指定したファイルの指定された全てのコードをそのまま取り込みます。
+        指定したファイルの全メソッドのコードを機能ブロックとして取り込みます。
     */
-    string SharpMixinList(params string[] files)
+    string SharpIncludeMethod(string file)
+    {
+        return SharpIncludeMethod(file, "", true);
+    }
+
+    /*
+        指定したファイルの指定したメソッドのコードを機能ブロックとして取り込みます。
+    */
+    string SharpIncludeMethod(string file, string name)
+    {
+        return SharpIncludeMethod(file, name, true);
+    }
+
+    /*
+        指定したファイルの全メソッドのコードを機能ブロックとして取り込みます。
+    */
+    string SharpIncludeMethod(string file, bool inusing)
+    {
+        return SharpIncludeMethod(file, "", inusing);
+    }
+
+    /*
+        指定したファイルの指定したメソッドのコードを機能ブロックとして取り込みます。
+    */
+    string SharpIncludeMethod(string file, string name, bool inusing)
+    {
+        return SharpIncludeCodeFile(file, name, inusing, false, false);
+    }
+
+    /*
+        複数のファイルの全メソッドのコードを機能ブロックとして取り込みます。
+    */
+    string SharpIncludeMethodList(params string[] files)
+    {
+        StringBuilder UsingSource = new StringBuilder();
+        StringBuilder BlockSource = new StringBuilder();
+        System.Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
+        for (int i = 0; i < files.Length; i++)
+        {
+            string src = File.ReadAllText(files[i]);
+            UsingSource.Append(SharpIncludeGetUsingString(src));
+            BlockSource.Append(SharpIncludeCodeString(src, "", false, true, false));
+        }
+        return UsingSource.ToString() + "\r\n" + SharpIncludeDefines.StartFeatureDelim + "\r\n" + BlockSource.ToString() + "\r\n" + SharpIncludeDefines.EndFeatureDelim;
+    }
+
+    /*
+        指定したファイルの全メソッドのコードをそのまま取り込みます。
+    */
+    string SharpMixinMethod(string file)
+    {
+        return SharpMixinMethod(file, "");
+    }
+
+    /*
+        指定したファイルから指定したメソッドのコードをそのまま取り込みます。
+    */
+    string SharpMixinMethod(string file, string name)
+    {
+        return SharpIncludeCodeFile(file, name, false, true, false);
+    }
+
+    /*
+        ファイルで指定したブロック全てを機能ブロックとして取り込みます。
+    */
+    string SharpIncludeBlock(string file)
+    {
+        return SharpIncludeBlock(file, -1);
+    }
+
+    /*
+        ファイルで指定したブロックのうちの(pos+1)番目のブロックを機能ブロックとして取り込みます。
+    */
+    string SharpIncludeBlock(string file, int pos)
+    {
+        return SharpIncludeBlockFile(file, pos, true, false);
+    }
+
+    /*
+        usingを解析するかどうかを指定し、ファイルで指定したブロック全てを機能ブロックとして取り込みます。
+    */
+    string SharpIncludeBlock(string file, bool inusing)
+    {
+        return SharpIncludeBlock(file, -1, inusing);
+    }
+
+    /*
+        usingを解析するかどうか指定し、ファイルで指定したブロックのうちの(pos+1)番目のブロックを機能ブロックとして取り込みます。
+    */
+    string SharpIncludeBlock(string file, int pos, bool inusing)
+    {
+        return SharpIncludeBlockFile(file, pos, inusing, false);
+    }
+
+    /*
+        複数のファイルでそれぞれ指定したブロック全てを機能ブロックとして取り込みます。
+    */
+    string SharpIncludeBlockList(params string[] files)
+    {
+        StringBuilder UsingSource = new StringBuilder();
+        StringBuilder BlockSource = new StringBuilder();
+        System.Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
+        for (int i = 0; i < files.Length; i++)
+        {
+            string src = File.ReadAllText(files[i]);
+            UsingSource.Append(SharpIncludeGetUsingString(src));
+            BlockSource.Append(SharpIncludeBlockString(src, -1, false, true));
+        }
+        return UsingSource.ToString() + "\r\n" + SharpIncludeDefines.StartFeatureDelim + "\r\n" + BlockSource.ToString() + "\r\n" + SharpIncludeDefines.EndFeatureDelim;
+    }
+
+    /*
+        ファイルで指定したブロック全てをそのまま取り込みます。
+    */
+    string SharpMixinBlock(string file)
+    {
+        return SharpMixinBlock(file, -1);
+    }
+
+    /*
+        ファイルで指定したブロックのうちの(pos+1)番目のブロックをそのまま取り込みます。
+    */
+    string SharpMixinBlock(string file, int pos)
+    {
+        return SharpIncludeBlockFile(file, pos, false, true);
+    }
+
+    /*
+        複数のファイルでそれぞれ指定したブロック全てをそのまま取り込みます。
+    */
+    string SharpMixinBlockList(params string[] files)
     {
         StringBuilder BlockSource = new StringBuilder();
         for (int i = 0; i < files.Length; i++)
         {
-            BlockSource.Append(SharpIncludeFile(files[i], -1, false, true));
+            BlockSource.Append(SharpIncludeBlockFile(files[i], -1, false, true));
         }
         return BlockSource.ToString();
     }
 
-    string SharpIncludeFile(string file, int pos, bool inusing, bool mixin)
+    string SharpIncludeBlockFile(string file, int pos, bool inusing, bool mixin)
     {
-        System.Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
-        string src = File.ReadAllText(file);
-        return SharpIncludeString(src, pos, inusing, mixin);
+        return SharpIncludeBlockString(SharpIncludeReadFile(file), pos, inusing, mixin);
     }
 
-    string SharpIncludeString(string src, int pos, bool inusing, bool mixin)
+    string SharpIncludeBlockString(string src, int pos, bool inusing, bool mixin)
     {
         StringBuilder ret = new StringBuilder();
         int cnt = 0;
@@ -131,6 +260,198 @@
         return ret.ToString();
     }
 
+    string SharpIncludeCodeFile(string file, string name, bool inusing, bool mixin, bool type)
+    {
+        return SharpIncludeCodeString(SharpIncludeReadFile(file), name, inusing, mixin, type);
+    }
+
+    string SharpIncludeCodeString(string src, string name, bool inusing, bool mixin, bool type)
+    {
+        StringBuilder ret = new StringBuilder(SharpIncludeGetCode(src, name, type));
+
+        if (!mixin)
+        {
+            ret.Insert(0, SharpIncludeDefines.StartFeatureDelim + "\r\n");
+            ret.Append("\r\n" + SharpIncludeDefines.EndFeatureDelim);
+        }
+
+        if (inusing)
+        {
+            ret.Insert(0, SharpIncludeGetUsingString(src));
+        }
+
+        return ret.ToString();
+    }
+
+    string SharpIncludeGetCode(string src, string name, bool type)
+    {
+        int pos = 0;
+        StringBuilder ret = new StringBuilder();
+        Regex regex;
+        if (type || name == "")
+        {
+            //クラスの読み込み
+            regex = new Regex(@"((([ \t]*\[.*\][ \t\r\n]+)*[ \t]*[ \ta-z]*class[ \t\r\n]+([a-zA-Z_][0-9a-zA-Z_]*)([ \t\r\n]*:[ \t\r\n]*[a-zA-Z_][0-9a-zA-Z_]*)?[ \t\r\n]+)({[\s\S]*}))");
+            Match match = regex.Match(src);
+            while (match.Success)
+            {
+                pos = match.Index + match.Groups[2].Value.Length;
+                if (name == "" || name == match.Groups[4].Value)
+                {
+                    if (type)
+                    {
+                        ret.Append(match.Groups[2].Value);
+                        ret.Append(SharpIncludeSearchBraces(match.Groups[6].Value));
+                    }
+                    else
+                    {
+                        string cls = SharpIncludeSearchBraces(match.Groups[6].Value);
+                        ret.Append(cls.Substring(1, cls.Length - 2));
+                    }
+                    ret.Append("\r\n");
+                }
+                match = regex.Match(src, pos);
+            }
+        }
+        else
+        {
+            //メソッドの読み込み
+            regex = new Regex(@"((([ \t]*\[.*\][ \t\r\n]+)*[ \t]*[ \ta-zA-Z0-9_]*[ \t\r\n]+([a-zA-Z_][0-9a-zA-Z_]*)\([^\)]*\)[ \t\r\n]+)({[\s\S]*}))");
+            Match match = regex.Match(src);
+            while (match.Success)
+            {
+                pos = match.Index + match.Groups[2].Value.Length;
+                if (name == "" || name == match.Groups[4].Value)
+                {
+                    ret.Append(match.Groups[2].Value);
+                    ret.Append(SharpIncludeSearchBraces(match.Groups[5].Value));
+                    ret.Append("\r\n");
+                }
+                match = regex.Match(src, pos);
+            }
+        }
+
+        return ret.ToString();
+    }
+
+    string SharpIncludeSearchBraces(string src)
+    {
+        int indent = 0;
+        bool isAstarisk = false;
+        bool isSlash = false;
+        bool isBlockComment = false;
+        bool isLineComment = false;
+        bool isDoubleQuote = false;
+        bool isSingleQuote = false;
+        bool isBackSlash = false;
+        for (int i = 0; i < src.Length; i++)
+        {
+            switch (src[i])
+            {
+                case '*':
+                    if (isSlash && !isBlockComment && !isLineComment && !isDoubleQuote && !isSingleQuote)
+                    {
+                        isSlash = false;
+                        isBlockComment = true;
+                    }
+                    else
+                    {
+                        isAstarisk = true;
+                    }
+                    break;
+                case '/':
+                    if (isAstarisk && isBlockComment && !isLineComment && !isDoubleQuote && !isSingleQuote)
+                    {
+                        isAstarisk = false;
+                        isBlockComment = false;
+                    }
+                    else if (isSlash && !isBlockComment && !isDoubleQuote && !isSingleQuote)
+                    {
+                        isSlash = false;
+                        isLineComment = true;
+                    }
+                    else
+                    {
+                        isSlash = true;
+                    }
+                    break;
+                case '\r':
+                case '\n':
+                    isLineComment = false;
+                    break;
+                case '"':
+                    if (!isBlockComment && !isLineComment && !isBackSlash)
+                    {
+                        if (!isDoubleQuote)
+                        {
+                            isDoubleQuote = true;
+                        }
+                        else
+                        {
+                            isDoubleQuote = false;
+                        }
+                    }
+                    else if(isBackSlash)
+                    {
+                        isBackSlash = false;
+                    }
+                    break;
+                case '\'':
+                    if (!isBlockComment && !isLineComment && !isBackSlash)
+                    {
+                        if (!isSingleQuote)
+                        {
+                            isSingleQuote = true;
+                        }
+                        else
+                        {
+                            isSingleQuote = false;
+                        }
+                    }
+                    else if(isBackSlash)
+                    {
+                        isBackSlash = false;
+                    }
+                    break;
+                case '\\':
+                    if (!isBlockComment && !isLineComment && (isDoubleQuote || isSingleQuote))
+                    {
+                        if (!isBackSlash)
+                        {
+                            isBackSlash = true;
+                        }
+                        else
+                        {
+                            isBackSlash = false;
+                        }
+                    }
+                    break;
+                case '{':
+                    if (!isBlockComment && !isLineComment && !isDoubleQuote && !isSingleQuote)
+                    {
+                        indent++;
+                    }
+                    break;
+                case '}':
+                    if (!isBlockComment && !isLineComment && !isDoubleQuote && !isSingleQuote)
+                    {
+                        indent--;
+                        if (indent <= 0)
+                        {
+                            return src.Substring(0, i + 1);
+                        }
+                    }
+                    break;
+                default:
+                    isAstarisk = false;
+                    isSlash = false;
+                    isBackSlash = false;
+                    break;
+            }
+        }
+        return src;
+    }
+
     string SharpIncludeGetUsingString(string src)
     {
         StringBuilder ret = new StringBuilder();
@@ -147,8 +468,12 @@
 
     string SharpIncludeGetUsingFile(string file)
     {
+        return SharpIncludeGetUsingString(SharpIncludeReadFile(file));
+    }
+
+    string SharpIncludeReadFile(string file)
+    {
         System.Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
-        string src = File.ReadAllText(file);
-        return SharpIncludeGetUsingString(src);
+        return File.ReadAllText(file);
     }
 #>

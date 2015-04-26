@@ -13,9 +13,11 @@
 #endif
 #>
 <#+
+    delegate void SharpTemplateT4Event(ref StringBuilder Source);
+
     //Debugオプションが有効かどうかの判別フラグ
     bool SHARPTEMPLATET4_DEBUG;
-    
+
     /*
         SharpTemplate.t4の一連の処理を実行します、通常はインクルードした時点で自動的に呼ばれますが、
         TemplateディレクティブのcompilerOptions属性でDISABLE_AUTOLOADシンボルを有効にした場合は明示的に呼び出す必要があります。
@@ -37,16 +39,14 @@
         string ConvertTemplate = SharpTemplateT4.Convert(Host, SHARPTEMPLATET4_DEBUG);
         WriteLine(SharpTemplateT4.Compile(ConvertTemplate, Host));
 
+        //残りの出力をコメントアウトした状態で出力。
+        PushIndent(SharpTemplateT4.LineComment);
+
         //Debugオプションが有効なら置換処理後のテンプレートをコメントアウトした状態で出力
         if (SHARPTEMPLATET4_DEBUG)
         {
-            PushIndent(SharpTemplateT4.LineComment);
             WriteLine(ConvertTemplate);
-            ClearIndent();
         }
-
-        //残りの出力をコメントアウトした状態で出力。
-        PushIndent(SharpTemplateT4.LineComment);
     }
 
     static class SharpTemplateT4
@@ -61,6 +61,11 @@
         public static string StartDelim = "<" + "#";
         public static string EndDelim = "#" + ">";
 
+        //イベントの定義
+        public static event SharpTemplateT4Event BeforeParse;
+        public static event SharpTemplateT4Event AfterParse;
+        public static event SharpTemplateT4Event AfterCompile;
+
         /*
             インクルード元テンプレートの置換処理を実行します
         */
@@ -68,6 +73,11 @@
         {
             //このファイルをインクルードした元のテンプレートファイルを読み込み    
             StringBuilder PreTemplate = new StringBuilder(File.ReadAllText(Host.TemplateFile));
+
+            if (BeforeParse != null)
+            {
+                BeforeParse(ref PreTemplate);
+            }
 
             //読み込んだテンプレートの先頭にDebugオプション判定用のシンボルを定義するコードと、生成処理判定用のシンボルをtrueの状態で定義するコードを挿入
 #if !DISABLE_SYMBOL
@@ -82,13 +92,18 @@
             }
             PreTemplate.Insert(0, "#define SHARPTEMPLATET4_GENERATE\r\n");
 #endif
+
+#if !DISABLE_FLAG
             //Debugオプション判定用のフラグの定義と生成処理判定用のフラグをtrueの状態で定義するコードを挿入
-            PreTemplate.Insert(0, EndDelim + "\r\n");
-            PreTemplate.Insert(0, "#pragma warning restore 0219\r\n");
-            PreTemplate.Insert(0, "const bool SHARPTEMPLATET4_DEBUG = " + Debug.ToString().ToLower() + ";\r\n");
-            PreTemplate.Insert(0, "const bool SHARPTEMPLATET4_GENERATE = true;\r\n");
-            PreTemplate.Insert(0, "#pragma warning disable 0219\r\n");
-            PreTemplate.Insert(0, StartDelim + "\r\n");
+            PreTemplate.Insert(0,
+                StartDelim + "\r\n" +
+                "#pragma warning disable 0219\r\n" +
+                "const bool SHARPTEMPLATET4_GENERATE = true;\r\n" +
+                "const bool SHARPTEMPLATET4_DEBUG = " + Debug.ToString().ToLower() + ";\r\n" +
+                "#pragma warning restore 0219\r\n" +
+                EndDelim + "\r\n"
+            );
+#endif
 
             //置換処理
             PreTemplate.Replace(DisableLineComment + StartDelim, StartDelim + LineComment);
@@ -97,6 +112,11 @@
             PreTemplate.Replace(StartComment + StartDelim, StartDelim);
             PreTemplate.Replace(EndDelim + EndComment, EndDelim);
             PreTemplate.Replace(LineComment + StartDelim, StartDelim);
+
+            if (AfterParse != null)
+            {
+                AfterParse(ref PreTemplate);
+            }
 
             return PreTemplate.ToString();
         }
@@ -108,9 +128,15 @@
         {
             //変換したテンプレートを別のT4エンジンで生成処理
             Engine T4Engine = new Engine();
-            string Output = T4Engine.ProcessTemplate(Template, Host);
+            StringBuilder Output = new StringBuilder(T4Engine.ProcessTemplate(Template, Host));
 
-            return Output;
+            if (AfterCompile != null)
+            {
+                AfterCompile(ref Output);
+            }
+
+            return Output.ToString();
         }
+
     }
 #>
