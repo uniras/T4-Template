@@ -49,14 +49,14 @@ SharpIncludeで利用できるメソッドは次の通りです。
 
 戻り値は全てstring型になっていますので、式コントロールブロック(```<#= ～ #>```)で呼び出すことで結果がそのまま出力されます。
 
->string SharpInclude(string file, string name, bool inusing)
+>string SharpInclude(string file, string name, bool inusing, bool decl)
 
 ファイルから全てのクラスのコードもしくは指定したクラスのコードを機能ブロックとして取り込みます。
 
 file - 取り込むファイル名を指定します。呼び出し元のテンプレートファイルのパスを基準とした相対パスが使えます。<br/>
 name - どのクラスを取り込むのかを文字列で指定します。空文字列を渡すもしくは指定しないと全て取り込みます。<br/>
 inusing - usingディレクティブを解析してimportディレクティブを出力するかどうかを指定します。指定しないとusingディレクティブを解析して出力します。
-
+decl - クラスの宣言部分を取り込むかどうかを指定します。指定しないと取り込みます。
 
 >string SharpIncludeList(params string[] files)
 
@@ -65,12 +65,13 @@ inusing - usingディレクティブを解析してimportディレクティブ�
 files - 取り込むファイルをカンマ(,)で区切って複数指定します。呼び出し元のテンプレートファイルのパスを基準とした相対パスが使えます。
 
 
->string SharpMixin(string file, string name)
+>string SharpMixin(string file, string name, bool decl)
 
 ファイルから全てのクラスのコードもしくは指定したクラスをそのまま取り込みます。
 
 file - 取り込むファイル名を指定します。呼び出し元のテンプレートファイルのパスを基準とした相対パスが使えます。<br />
 name - どのクラス取り込むのかを文字列で指定します。空文字列を渡すもしくは指定しないと全て取り込みます。
+decl - クラスの宣言部分を取り込むかどうかを指定します。指定しないと取り込みます。
 
 
 >string SharpMixinList(params string[] files)

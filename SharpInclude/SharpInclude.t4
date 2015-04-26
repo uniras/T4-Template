@@ -2,7 +2,7 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Text.RegularExpressions" #>
 <#+
-    //SharpInlucde用のデリミタの定義
+    //SharpInlucde用の定義
     class SharpIncludeDefines
     {
         public static string SharpIncludeStartDelim = @"//<[\+][\+]+";
@@ -12,6 +12,8 @@
         public static string EndDelim = "#" + ">";
         public static string StartFeatureDelim = StartDelim + "+";
         public static string EndFeatureDelim = EndDelim;
+
+        public static string[] IgnoreName = {"for", "foreach", "while", "if", "using" };
     }
 
     /*
@@ -19,7 +21,7 @@
     */
     string SharpInclude(string file)
     {
-        return SharpInclude(file, "", true);
+        return SharpInclude(file, "", true, true);
     }
 
     /*
@@ -27,7 +29,7 @@
     */
     string SharpInclude(string file, string name)
     {
-        return SharpInclude(file, name, true);
+        return SharpInclude(file, name, true, true);
     }
 
     /*
@@ -35,7 +37,7 @@
     */
     string SharpInclude(string file, bool inusing)
     {
-        return SharpInclude(file, "", inusing);
+        return SharpInclude(file, "", inusing, true);
     }
 
     /*
@@ -43,13 +45,21 @@
     */
     string SharpInclude(string file, string name, bool inusing)
     {
-        return SharpIncludeCodeFile(file, name, inusing, false, true);
+        return SharpInclude(file, name, inusing, true);
+    }
+
+    /*
+        指定したファイルから指定したクラスのコードを機能ブロックとして取り込みます。
+    */
+    string SharpInclude(string file, string name, bool inusing, bool decl)
+    {
+        return SharpIncludeCodeFile(file, name, inusing, false, decl, true);
     }
 
     /*
         複数のファイルの全クラスのコードを機能ブロックとして取り込みます。
     */
-    string SharpIncludekList(params string[] files)
+    string SharpIncludeList(params string[] files)
     {
         StringBuilder UsingSource = new StringBuilder();
         StringBuilder BlockSource = new StringBuilder();
@@ -57,8 +67,8 @@
         for (int i = 0; i < files.Length; i++)
         {
             string src = File.ReadAllText(files[i]);
-            UsingSource.Append(SharpIncludeGetUsingString(src));
-            BlockSource.Append(SharpIncludeCodeString(src, "", false, true, true));
+            UsingSource.Append(SharpIncludeGetUsingString(src) + "\r\n");
+            BlockSource.Append(SharpIncludeCodeString(src, "", false, true, true, true));
         }
         return UsingSource.ToString() + "\r\n" + SharpIncludeDefines.StartFeatureDelim + "\r\n" + BlockSource.ToString() + "\r\n" + SharpIncludeDefines.EndFeatureDelim;
     }
@@ -68,7 +78,7 @@
     */
     string SharpMixin(string file)
     {
-        return SharpMixin(file, "");
+        return SharpMixin(file, "", true);
     }
 
     /*
@@ -76,7 +86,15 @@
     */
     string SharpMixin(string file, string name)
     {
-        return SharpIncludeCodeFile(file, name, false, true, true);
+        return SharpMixin(file, name, true);
+    }
+
+    /*
+        指定したファイルから指定したクラスのコードをそのまま取り込みます。
+    */
+    string SharpMixin(string file, string name, bool decl)
+    {
+        return SharpIncludeCodeFile(file, name, false, false, decl, true);
     }
 
     /*
@@ -108,7 +126,7 @@
     */
     string SharpIncludeMethod(string file, string name, bool inusing)
     {
-        return SharpIncludeCodeFile(file, name, inusing, false, false);
+        return SharpIncludeCodeFile(file, name, inusing, true, true, false);
     }
 
     /*
@@ -122,8 +140,8 @@
         for (int i = 0; i < files.Length; i++)
         {
             string src = File.ReadAllText(files[i]);
-            UsingSource.Append(SharpIncludeGetUsingString(src));
-            BlockSource.Append(SharpIncludeCodeString(src, "", false, true, false));
+            UsingSource.Append(SharpIncludeGetUsingString(src) + "\r\n");
+            BlockSource.Append(SharpIncludeCodeString(src, "", false, true, true, false));
         }
         return UsingSource.ToString() + "\r\n" + SharpIncludeDefines.StartFeatureDelim + "\r\n" + BlockSource.ToString() + "\r\n" + SharpIncludeDefines.EndFeatureDelim;
     }
@@ -141,7 +159,7 @@
     */
     string SharpMixinMethod(string file, string name)
     {
-        return SharpIncludeCodeFile(file, name, false, true, false);
+        return SharpIncludeCodeFile(file, name, false, true, true, false);
     }
 
     /*
@@ -187,7 +205,7 @@
         for (int i = 0; i < files.Length; i++)
         {
             string src = File.ReadAllText(files[i]);
-            UsingSource.Append(SharpIncludeGetUsingString(src));
+            UsingSource.Append(SharpIncludeGetUsingString(src) + "\r\n");
             BlockSource.Append(SharpIncludeBlockString(src, -1, false, true));
         }
         return UsingSource.ToString() + "\r\n" + SharpIncludeDefines.StartFeatureDelim + "\r\n" + BlockSource.ToString() + "\r\n" + SharpIncludeDefines.EndFeatureDelim;
@@ -231,7 +249,7 @@
     {
         StringBuilder ret = new StringBuilder();
         int cnt = 0;
-        Regex regex = new Regex(SharpIncludeDefines.SharpIncludeStartDelim + @"([\s\S]*?)" + SharpIncludeDefines.SharpIncludeEndDelim);
+        Regex regex = new Regex(SharpIncludeDefines.SharpIncludeStartDelim + @"[\r\n]*([\s\S]*?)[\s]?*" + SharpIncludeDefines.SharpIncludeEndDelim);
         Match match = regex.Match(src);
         while (match.Success)
         {
@@ -252,20 +270,20 @@
 
         if (inusing)
         {
-            ret.Insert(0, SharpIncludeGetUsingString(src));
+            ret.Insert(0, SharpIncludeGetUsingString(src) + "\r\n");
         }
 
         return ret.ToString();
     }
 
-    string SharpIncludeCodeFile(string file, string name, bool inusing, bool mixin, bool type)
+    string SharpIncludeCodeFile(string file, string name, bool inusing, bool mixin, bool decl, bool type)
     {
-        return SharpIncludeCodeString(SharpIncludeReadFile(file), name, inusing, mixin, type);
+        return SharpIncludeCodeString(SharpIncludeReadFile(file), name, inusing, mixin, decl, type);
     }
 
-    string SharpIncludeCodeString(string src, string name, bool inusing, bool mixin, bool type)
+    string SharpIncludeCodeString(string src, string name, bool inusing, bool mixin, bool decl, bool type)
     {
-        StringBuilder ret = new StringBuilder(SharpIncludeGetCode(src, name, type));
+        StringBuilder ret = new StringBuilder(SharpIncludeGetCode(src, name, decl, type));
 
         if (!mixin)
         {
@@ -275,18 +293,18 @@
 
         if (inusing)
         {
-            ret.Insert(0, SharpIncludeGetUsingString(src));
+            ret.Insert(0, SharpIncludeGetUsingString(src) + "\r\n");
         }
 
         return ret.ToString();
     }
 
-    string SharpIncludeGetCode(string src, string name, bool type)
+    string SharpIncludeGetCode(string src, string name, bool decl, bool type)
     {
         int pos = 0;
         StringBuilder ret = new StringBuilder();
         Regex regex;
-        if (type || name == "")
+        if (type)
         {
             //クラスの読み込み
             regex = new Regex(@"((([ \t]*\[.*\][ \t\r\n]+)*[ \t]*[ \ta-z]*class[ \t\r\n]+([a-zA-Z_][0-9a-zA-Z_]*)([ \t\r\n]*:[ \t\r\n]*[a-zA-Z_][0-9a-zA-Z_]*)?[ \t\r\n]+)({[\s\S]*}))");
@@ -296,7 +314,7 @@
                 pos = match.Index + match.Groups[2].Value.Length;
                 if (name == "" || name == match.Groups[4].Value)
                 {
-                    if (type)
+                    if (decl)
                     {
                         ret.Append(match.Groups[2].Value);
                         ret.Append(SharpIncludeSearchBraces(match.Groups[6].Value));
@@ -318,8 +336,15 @@
             Match match = regex.Match(src);
             while (match.Success)
             {
+                bool ignore = false;
                 pos = match.Index + match.Groups[2].Value.Length;
-                if (name == "" || name == match.Groups[4].Value)
+                foreach(string s in SharpIncludeDefines.IgnoreName) {
+                    if (s == match.Groups[4].Value)
+                    {
+                        ignore = true;
+                    }
+                }
+                if (!ignore && (name == "" || name == match.Groups[4].Value))
                 {
                     ret.Append(match.Groups[2].Value);
                     ret.Append(SharpIncludeSearchBraces(match.Groups[5].Value));
@@ -453,12 +478,21 @@
     string SharpIncludeGetUsingString(string src)
     {
         StringBuilder ret = new StringBuilder();
+        bool init = true;
         Regex regex = new Regex(@"[ \t]*using[ \t]+([_a-zA-z][_a-zA-Z0-9\.]*);");
         Match match = regex.Match(src);
         while (match.Success)
         {
             Group grp = match.Groups[1];
-            ret.Append(SharpIncludeDefines.StartDelim + "@ import namespace=\"" + grp + "\" " + SharpIncludeDefines.EndDelim + "\r\n");
+            if (init)
+            {
+                init = false;
+            }
+            else
+            {
+                ret.Append("\r\n");
+            }
+            ret.Append(SharpIncludeDefines.StartDelim + "@ import namespace=\"" + grp + "\" " + SharpIncludeDefines.EndDelim);
             match = match.NextMatch();
         }
         return ret.ToString();
@@ -474,4 +508,4 @@
         System.Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
         return File.ReadAllText(file);
     }
-    #>
+#>

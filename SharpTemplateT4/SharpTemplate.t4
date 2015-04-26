@@ -1,7 +1,6 @@
-﻿<#@ import namespace="System.Text" #>
-<#@ import namespace="System.Collections.Generic" #>
+﻿<#@ import namespace="Microsoft.VisualStudio.TextTemplating" #>
 <#@ import namespace="System.IO" #>
-<#@ import namespace="Microsoft.VisualStudio.TextTemplating" #>
+<#@ import namespace="System.Text" #>
 <#
 #pragma warning disable 0219
     //生成処理判定用のフラグをfalseの状態で定義
