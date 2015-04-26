@@ -1,8 +1,6 @@
-﻿<#@ import namespace="System.Text" #>
-<#@ import namespace="System.Collections.Generic" #>
-<#@ import namespace="System.IO" #>
-<#@ import namespace="Microsoft.VisualStudio.TextTemplating" #>
-<#@ import namespace="System.Text.RegularExpressions" #> 
+﻿<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Text.RegularExpressions" #>
 <#+
     //SharpInlucde用のデリミタの定義
     class SharpIncludeDefines
@@ -41,7 +39,7 @@
     }
 
     /*
-       指定したファイルから指定したクラスのコードを機能ブロックとして取り込みます。
+        指定したファイルから指定したクラスのコードを機能ブロックとして取り込みます。
     */
     string SharpInclude(string file, string name, bool inusing)
     {
@@ -337,7 +335,7 @@
     string SharpIncludeSearchBraces(string src)
     {
         int indent = 0;
-        bool isAstarisk = false;
+        bool isAsterisk = false;
         bool isSlash = false;
         bool isBlockComment = false;
         bool isLineComment = false;
@@ -356,13 +354,13 @@
                     }
                     else
                     {
-                        isAstarisk = true;
+                        isAsterisk = true;
                     }
                     break;
                 case '/':
-                    if (isAstarisk && isBlockComment && !isLineComment && !isDoubleQuote && !isSingleQuote)
+                    if (isAsterisk && isBlockComment && !isLineComment && !isDoubleQuote && !isSingleQuote)
                     {
-                        isAstarisk = false;
+                        isAsterisk = false;
                         isBlockComment = false;
                     }
                     else if (isSlash && !isBlockComment && !isDoubleQuote && !isSingleQuote)
@@ -391,7 +389,7 @@
                             isDoubleQuote = false;
                         }
                     }
-                    else if(isBackSlash)
+                    else if (isBackSlash)
                     {
                         isBackSlash = false;
                     }
@@ -408,7 +406,7 @@
                             isSingleQuote = false;
                         }
                     }
-                    else if(isBackSlash)
+                    else if (isBackSlash)
                     {
                         isBackSlash = false;
                     }
@@ -443,7 +441,7 @@
                     }
                     break;
                 default:
-                    isAstarisk = false;
+                    isAsterisk = false;
                     isSlash = false;
                     isBackSlash = false;
                     break;
@@ -476,4 +474,4 @@
         System.Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
         return File.ReadAllText(file);
     }
-#>
+    #>
