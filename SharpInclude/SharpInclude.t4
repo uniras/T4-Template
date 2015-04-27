@@ -13,7 +13,7 @@
         public static string StartFeatureDelim = StartDelim + "+";
         public static string EndFeatureDelim = EndDelim;
 
-        public static string[] IgnoreName = {"for", "foreach", "while", "if", "using" };
+        public static string[] IgnoreName = { "for", "foreach", "while", "if", "using", "switch" };
     }
 
     /*
@@ -307,7 +307,7 @@
         if (type)
         {
             //クラスの読み込み
-            regex = new Regex(@"((([ \t]*\[.*\][ \t\r\n]+)*[ \t]*[ \ta-z]*class[ \t\r\n]+([a-zA-Z_][0-9a-zA-Z_]*)([ \t\r\n]*:[ \t\r\n]*[a-zA-Z_][0-9a-zA-Z_]*)?[ \t\r\n]+)({[\s\S]*}))");
+            regex = new Regex(@"((([ \t]*\[.*\][ \t\r\n]+)*[ \t]*[ \ta-z]*class[ \t\r\n]+([a-zA-Z_][0-9a-zA-Z_]*)([ \t\r\n]*:[ \t\r\n]*[a-zA-Z_][0-9a-zA-Z_\.]*)?[ \t\r\n]+)({[\s\S]*}))");
             Match match = regex.Match(src);
             while (match.Success)
             {
@@ -332,22 +332,23 @@
         else
         {
             //メソッドの読み込み
-            regex = new Regex(@"((([ \t]*\[.*\][ \t\r\n]+)*[ \t]*[ \ta-zA-Z0-9_]*[ \t\r\n]+([a-zA-Z_][0-9a-zA-Z_]*)\([^\)]*\)[ \t\r\n]+)({[\s\S]*}))");
+            regex = new Regex(@"((([ \t]*\[.*\][ \t\r\n]+)*([ \t]+[a-zA-Z0-9_\.]*)*[ \t\r\n]+([a-zA-Z_][0-9a-zA-Z_]*)\([^\)]*\)[ \t\r\n]+)({[\s\S]*}))");
             Match match = regex.Match(src);
             while (match.Success)
             {
                 bool ignore = false;
                 pos = match.Index + match.Groups[2].Value.Length;
-                foreach(string s in SharpIncludeDefines.IgnoreName) {
-                    if (s == match.Groups[4].Value)
+                foreach (string s in SharpIncludeDefines.IgnoreName)
+                {
+                    if (s == match.Groups[5].Value)
                     {
                         ignore = true;
                     }
                 }
-                if (!ignore && (name == "" || name == match.Groups[4].Value))
+                if (!ignore && (name == "" || name == match.Groups[5].Value))
                 {
                     ret.Append(match.Groups[2].Value);
-                    ret.Append(SharpIncludeSearchBraces(match.Groups[5].Value));
+                    ret.Append(SharpIncludeSearchBraces(match.Groups[6].Value));
                     ret.Append("\r\n");
                 }
                 match = regex.Match(src, pos);
