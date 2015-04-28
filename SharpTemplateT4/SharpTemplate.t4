@@ -116,7 +116,6 @@
             PreTemplate.Replace(StartComment + StartDelim, StartDelim);
             PreTemplate.Replace(EndDelim + EndComment, EndDelim);
             PreTemplate.Replace(LineComment + StartDelim, StartDelim);
-            PreTemplate.Replace(EndComment + LineComment + EndDelimt, EndDelim);
 
             if (AfterParse != null)
             {
