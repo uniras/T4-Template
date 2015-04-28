@@ -6,6 +6,7 @@
 
 SharpTemplate.t4は、インクルードすることでC#コードとして正しい状態を保ったままT4(Text Template Transformation Toolkit)の機能を利用できるようにするT4テンプレートです。
 
+
 制作動機
 ----
 
@@ -15,12 +16,14 @@ SharpTemplate.t4は、インクルードすることでC#コードとして正�
 
 これらをどうにかしてC#としてコーディングしながら手軽にT4を使えないかという欲求から生まれました。
 
+
 仕組み
 ----
 
 実行中のものとは別のT4エンジンのインスタンスを作成し、インクルード元のテンプレートファイルにとっても単純な置換処理をしたものを渡して結果を出力しているだけです。
 
 メタプログラミングのメタプログラミング(!?)を実現するサンプルでもあります。 
+
 
 使い方
 ----
@@ -29,11 +32,13 @@ SharpTemplate.t4は、インクルードすることでC#コードとして正�
 
 プロジェクトにSharpTemplate.t4を追加するだけです。 
 
+
 2.設定
 
 プロジェクトにC#ファイルを作成または追加後、ファイルのプロパティを開き、ビルドアクションを"なし"に、カスタムツールには"TextTemplatingFileGenerator"と入れてください。
 
 SharpDevelop, Monodevelopも同様にBuild actionを"None"に、Custom Toolには"TextTemplatingFileGenerator"と入れてください。
+
 
 3.おまじない
 
@@ -44,6 +49,7 @@ SharpDevelop, Monodevelopも同様にBuild actionを"None"に、Custom Toolに�
     ///<#@ include file="SharpTemplate.t4" #>   
 
 これで、保存時にT4テンプレートとして変換処理され、C#コードが出力されます。
+
 
 4.使い方
 
@@ -64,26 +70,37 @@ T4のディレクティブやコントロールブロックを記述するとき
 
 文字列リテラルの中に記述するときにはコメントで囲む必要はありません。`               
 
-    Console.WriteLine("<#= a #>");            
+    Console.WriteLine("<#= a #>");
+
+
+変数やクラス等の宣言の一部をT4で生成したい場合、そのままではC#上ではコメントとして認識されず構文エラーになるのでダミーの識別子を付加することができるようになっています。#>*/の直後に(スペース等を挟まずに)適当な型名や識別子を記述すると生成処理の際に削除されます。
+
+	int /*<#= VarName #>*/DummyVar = 0;  //DummyVarは生成処理の際に削除されて最終的にT4部分のVarNameの値に置き換わっています。
 
 
 機能ブロック(<#+ ～ #>)はT4の制約上(機能ブロック以降にテキストを記述するとエラーになるため)使えません。別ファイルに記述の上インクルードしてください。
 
+
 ```///<# ～ #>```(スラッシュ3つ)、```/**<# ～ #>**/```(アスタリスク2つ)のコメント内のディレクティブ、コントロールブロックは無効となり最終的な生成処理には使われません。
+
 
 5.オプション
 
-templateレクティブのcompilerOptions属性でC#コンパイラのオプションと同じ方法でシンボルを定義することでSharpTemplateT4の動作を制御することが出来ます。
+templateディレクティブのcompilerOptions属性でC#コンパイラのオプションと同じ方法でシンボルを定義することでSharpTemplateT4の動作を制御することが出来ます。
 
-DISABLE_AUTOLOAD: インクルード時に自動的に処理を実行するのを抑制します。処理を開始するには明示的に```SharpTemplateT4Generate(this.Host);``` というコードを記述する必要があります。
+DISABLE_AUTOLOAD: インクルード時に自動的に処理を実行するのを抑制します。処理を開始するには明示的に```<# SharpTemplateT4Generate(this.Host); #>``` というコードを記述する必要があります。
 
-DISABLE_SYMBOL: SharpTemplate.t4が生成するC#シンボル定義のコードを生成しないようにします。SHARPTEMPLATET4_GENERATEシンボルによるコードの分岐はできなくなります。(変数は利用できます)
+DISABLE_SYMBOL: SharpTemplate.t4が生成するC#シンボル定義のコードを生成しないようにします。SHARPTEMPLATET4_GENERATEシンボルによるコードの分岐はできなくなります。
+
+DISABLE_FLAG: SharpTemplate.t4が生成する判定用の変数を定義するコードを生成しないようにします。SHARPTEMPLATET4_GENERATE変数による生成処理の判定はできなくなります。
+
 
 6.注意
 
 このコンバータは仕組み上必ず2回生成処理が行われます。呼び出し回数や順序などに依存する処理がある場合は注意してください。
 
 SHARPTEMPLATET4_GENERATE変数またはシンボルで最終的にC#コードとして生成される処理なのかどうかを判別できます。
+
 
 参考
 ----
@@ -101,6 +118,7 @@ http://blogs.wankuma.com/youryella/archive/2009/12/26/184287.aspx
 T4 テンプレートで、ソリューション構成に応じた処理の切り替え ( 条件コンパイルっぽい動作 ) を行うには
 
 http://devadjust.exblog.jp/14357912/
+
 
 ライセンス
 -----

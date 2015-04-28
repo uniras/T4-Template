@@ -1,6 +1,7 @@
 ﻿<#@ import namespace="Microsoft.VisualStudio.TextTemplating" #>
 <#@ import namespace="System.IO" #>
 <#@ import namespace="System.Text" #>
+<#@ import namespace="System.Text.RegularExpressions" #>
 <#
 #pragma warning disable 0219
     //生成処理判定用のフラグをfalseの状態で定義
@@ -78,6 +79,10 @@
                 BeforeParse(ref PreTemplate);
             }
 
+            //ダミー識別子の削除
+            string RepString = Regex.Replace(PreTemplate.ToString(), Regex.Escape(EndDelim + EndComment) + @"[a-zA-Z0-9_]+", EndDelim + EndComment);
+            PreTemplate.Clear().Append(RepString);
+
             //読み込んだテンプレートの先頭にDebugオプション判定用のシンボルを定義するコードと、生成処理判定用のシンボルをtrueの状態で定義するコードを挿入
 #if !DISABLE_SYMBOL
             if (Debug)
@@ -111,6 +116,7 @@
             PreTemplate.Replace(StartComment + StartDelim, StartDelim);
             PreTemplate.Replace(EndDelim + EndComment, EndDelim);
             PreTemplate.Replace(LineComment + StartDelim, StartDelim);
+            PreTemplate.Replace(EndComment + LineComment + EndDelimt, EndDelim);
 
             if (AfterParse != null)
             {
