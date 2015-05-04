@@ -113,7 +113,7 @@
         StringBuilder cblock = new StringBuilder();
 
         int cnt = 0;
-        Regex regex = new Regex(SharpIncludeDefines.SharpIncludeStartDelim + @"[\r\n]*([\s\S]*?)[\t ]*?" + SharpIncludeDefines.SharpIncludeEndDelim);
+        Regex regex = new Regex(SharpIncludeDefines.SharpIncludeStartDelim + @"[\r\n]*([\s\S]*?)\s*?" + SharpIncludeDefines.SharpIncludeEndDelim);
         Match match = regex.Match(src);
         while (match.Success)
         {
