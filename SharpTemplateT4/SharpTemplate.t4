@@ -66,6 +66,8 @@
         public static string DisableLineComment = "///";
         public static string StartDelim = "<" + "#";
         public static string EndDelim = "#" + ">";
+        public static string EnableStartDelim = "<*#";
+        public static string EnableEndDelim = "#*>";
 
         //イベントの定義
         public static event SharpTemplateT4Event BeforeParse;
@@ -84,10 +86,6 @@
             {
                 BeforeParse(ref PreTemplate);
             }
-
-            //ダミー識別子の削除
-            string RepString = Regex.Replace(PreTemplate.ToString(), Regex.Escape(EndDelim + EndComment) + @"\S+", EndDelim + EndComment);
-            PreTemplate.Clear().Append(RepString);
 
             //読み込んだテンプレートの先頭にDebugオプション判定用のシンボルを定義するコードと、生成処理判定用のシンボルをtrueの状態で定義するコードを挿入
 #if !DISABLE_SYMBOL
@@ -115,7 +113,13 @@
             );
 #endif
 
+            //ダミー識別子の削除
+            string RepString = Regex.Replace(PreTemplate.ToString(), Regex.Escape(EndDelim + EndComment) + @"\S+", EndDelim + EndComment);
+            PreTemplate.Clear().Append(RepString);
+
             //置換処理
+            PreTemplate.Replace(EnableStartDelim, StartDelim);
+            PreTemplate.Replace(EnableEndDelim, EndDelim);
             PreTemplate.Replace(DisableLineComment + StartDelim, StartDelim + LineComment);
             PreTemplate.Replace(DisableStartComment + StartDelim, StartDelim + StartComment);
             PreTemplate.Replace(EndDelim + DisableEndComment, EndComment + EndDelim);
