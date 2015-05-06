@@ -10,12 +10,9 @@
         public static string StartComment = "/*";
         public static string EndComment = "*/";
         public static string LineComment = "//";
-        public static string DisableStartComment = "/**";
-        public static string DisableEndComment = "**/";
-        public static string DisableLineComment = "///";
 
-        public static string SharpIncludeStartDelim = @"//<(\+\++|--+|\*\*+)";
-        public static string SharpIncludeEndDelim = @"//(\+\++|--+|\*\*+)>";
+        public static string SharpIncludeStartDelim = LineComment + @"<(\+\++|--+|\*\*+)";
+        public static string SharpIncludeEndDelim = LineComment + @"(\+\++|--+|\*\*+)>";
 
         public static string StartDelim = "<" + "#";
         public static string EndDelim = "#" + ">";
@@ -26,10 +23,12 @@
         public static string EnableEndDelim = "#*>";
 
         public static Regex SliceBlockRegex;
+        public static Regex SliceClassRegex;
 
         static SharpIncludeDefines()
         {
-            SliceBlockRegex = new Regex(SharpIncludeDefines.SharpIncludeStartDelim + @"(\S*)(\s*?)([\s\S]*?)([ \t]*?)" + SharpIncludeDefines.SharpIncludeEndDelim);
+            SliceBlockRegex = new Regex(SharpIncludeDefines.SharpIncludeStartDelim + @"\*?(\S*)(\r\n|\r|\n)([\s\S]*?)(\r\n|\r|\n)[ \t]*" + SharpIncludeDefines.SharpIncludeEndDelim);
+            SliceClassRegex = new Regex(@"(([ \t]*\[[^\]]*\]\s+)*[\sa-z]*class\s+([a-zA-Z_][0-9a-zA-Z_]*)([\s<][^{]*)?)({[\s\S]*})");
         }
     }
 
@@ -63,15 +62,15 @@
         StringBuilder UsingSource = new StringBuilder();
         StringBuilder BlockSource = new StringBuilder();
 
-        System.Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
+        Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
         for (int i = 0; i < files.Length; i++)
         {
             string src = File.ReadAllText(files[i]);
             UsingSource.Append(src + Environment.NewLine);
-            BlockSource.Append(src);
+            BlockSource.Append(src + Environment.NewLine);
         }
 
-        return SharpIncludeGetUsingString(UsingSource.ToString()) + SharpIncludeString(BlockSource.ToString(), "", false, false);
+        return SharpIncludeGetUsingString(UsingSource.ToString(), true) + SharpIncludeString(BlockSource.ToString(), "", false, false);
     }
 
     string SharpIncludeListPos(NameValueCollection files)
@@ -79,10 +78,10 @@
         StringBuilder UsingSource = new StringBuilder();
         StringBuilder BlockSource = new StringBuilder();
 
-        System.Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
+        Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
         foreach (string key in files.AllKeys)
         {
-            foreach (string val in files.GetValues((string)key))
+            foreach (string val in files.GetValues(key))
             {
                 string src = File.ReadAllText(key);
                 UsingSource.Append(src + Environment.NewLine);
@@ -90,7 +89,7 @@
             }
         }
 
-        return SharpIncludeGetUsingString(UsingSource.ToString()) + SharpIncludeString(BlockSource.ToString(), "", false, false);
+        return SharpIncludeGetUsingString(UsingSource.ToString(), true) + SharpIncludeString(BlockSource.ToString(), "", false, false);
     }
 
     string SharpMixin(string file)
@@ -108,9 +107,24 @@
         StringBuilder BlockSource = new StringBuilder();
         for (int i = 0; i < files.Length; i++)
         {
-            BlockSource.Append(SharpIncludeFile(files[i], "", false, true));
+            BlockSource.Append(SharpIncludeFile(files[i], "", false, true) + Environment.NewLine);
         }
         return BlockSource.ToString();
+    }
+
+    string SharpMixinListPos(NameValueCollection files)
+    {
+        StringBuilder BlockSource = new StringBuilder();
+        Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
+        foreach (string key in files.AllKeys)
+        {
+            foreach (string val in files.GetValues(key))
+            {
+                string src = File.ReadAllText(key);
+                BlockSource.Append(SharpIncludeGetPos(src, val) + Environment.NewLine);
+            }
+        }
+        return SharpIncludeString(BlockSource.ToString(), "", false, true);
     }
 
     string SharpIncludeFile(string file, string pos, bool inusing, bool mixin)
@@ -125,39 +139,71 @@
         StringBuilder cblock = new StringBuilder();
         StringBuilder dblock = new StringBuilder();
 
-        Match match = SharpIncludeDefines.SliceBlockRegex.Match(src);
-        while (match.Success)
+        if (pos.Length > 0 && pos[0] == '*')
         {
-            Group grp = match.Groups[4];
-            Group name = match.Groups[2];
-            if (pos.Length == 0 || pos.Equals(name.ToString()))
+            int con = 0;
+            Match match = SharpIncludeDefines.SliceClassRegex.Match(src);
+            while (match.Success)
             {
-                if (!mixin)
+                string cls = SharpIncludeSearchBraces(match.Groups[5].ToString());
+                con = match.Index + match.Groups[1].ToString().Length + cls.Length;
+                if (pos.Equals("*") || pos.Equals("*" + match.Groups[3].ToString()))
                 {
-                    Match blank = Regex.Match(grp.ToString(), @"^\s+$");
-                    if (grp.Length > 0 && !blank.Success)
+                    cls = Regex.Replace(cls, SharpIncludeDefines.SharpIncludeStartDelim, "");
+                    cls = Regex.Replace(cls, SharpIncludeDefines.SharpIncludeEndDelim, "");
+                    if (!mixin)
                     {
-                        Group type = match.Groups[1];
-                        if (type.ToString()[0] == '+')
-                        {
-                            fblock.Append(grp);
-                        }
-                        else if (type.ToString()[0] == '-')
-                        {
-                            cblock.Append(grp);
-                        }
-                        else
-                        {
-                            dblock.Append(grp);
-                        }
+                        fblock.Append(match.Groups[1].ToString());
+                        fblock.Append(cls);
+                        fblock.Append(Environment.NewLine);
+                    }
+                    else 
+                    {
+                        ret.Append(match.Groups[1].ToString());
+                        ret.Append(cls);
+                        ret.Append(Environment.NewLine);
                     }
                 }
-                else
-                {
-                    ret.Append(grp);
-                }
+                match = SharpIncludeDefines.SliceClassRegex.Match(src, con);
             }
-            match = match.NextMatch();
+        }
+        else
+        {
+            Match match = SharpIncludeDefines.SliceBlockRegex.Match(src);
+            while (match.Success)
+            {
+                Group grp = match.Groups[4];
+                Group name = match.Groups[2];
+                if (pos.Length == 0 || pos.Equals(name.ToString()))
+                {
+                    if (!mixin)
+                    {
+                        Match blank = Regex.Match(grp.ToString(), @"^\s+$");
+                        if (grp.Length > 0 && !blank.Success)
+                        {
+                            Group type = match.Groups[1];
+                            if (type.ToString()[0] == '+')
+                            {
+                                fblock.Append(grp + Environment.NewLine);
+                            }
+                            else if (type.ToString()[0] == '-')
+                            {
+                                cblock.Append(grp + Environment.NewLine);
+                            }
+                            else
+                            {
+                                dblock.Append(grp);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ret.Append(grp);
+                    }
+                }
+                match = match.NextMatch();
+            }
+
         }
 
         if (!mixin)
@@ -168,7 +214,7 @@
                 ret.Append(fblock.ToString());
                 ret.Append(Environment.NewLine + SharpIncludeDefines.EndFeatureDelim);
             }
-            if(cblock.Length > 0)
+            if (cblock.Length > 0)
             {
                 ret.Insert(0, Environment.NewLine + SharpIncludeDefines.EndDelim);
                 ret.Insert(0, cblock.ToString());
@@ -177,13 +223,11 @@
             if (dblock.Length > 0)
             {
                 string RepString = Regex.Replace(dblock.ToString(), Regex.Escape(SharpIncludeDefines.EndDelim + SharpIncludeDefines.EndComment) + @"\S+", SharpIncludeDefines.EndDelim + SharpIncludeDefines.EndComment);
+                RepString = Regex.Replace(RepString, Regex.Escape(SharpIncludeDefines.EnableEndDelim + SharpIncludeDefines.EndComment) + @"\S+", SharpIncludeDefines.EndDelim + SharpIncludeDefines.EndComment);
                 dblock.Clear().Append(RepString);
 
                 dblock.Replace(SharpIncludeDefines.EnableStartDelim, SharpIncludeDefines.StartDelim);
                 dblock.Replace(SharpIncludeDefines.EnableEndDelim, SharpIncludeDefines.EndDelim);
-                dblock.Replace(SharpIncludeDefines.DisableLineComment + SharpIncludeDefines.StartDelim, SharpIncludeDefines.StartDelim + SharpIncludeDefines.LineComment);
-                dblock.Replace(SharpIncludeDefines.DisableStartComment + SharpIncludeDefines.StartDelim, SharpIncludeDefines.StartDelim + SharpIncludeDefines.StartComment);
-                dblock.Replace(SharpIncludeDefines.EndDelim + SharpIncludeDefines.DisableEndComment, SharpIncludeDefines.EndComment + SharpIncludeDefines.EndDelim);
                 dblock.Replace(SharpIncludeDefines.StartComment + SharpIncludeDefines.StartDelim, SharpIncludeDefines.StartDelim);
                 dblock.Replace(SharpIncludeDefines.EndDelim + SharpIncludeDefines.EndComment, SharpIncludeDefines.EndDelim);
                 dblock.Replace(SharpIncludeDefines.LineComment + SharpIncludeDefines.StartDelim, SharpIncludeDefines.StartDelim);
@@ -194,7 +238,7 @@
 
         if (inusing)
         {
-            ret.Insert(0, SharpIncludeGetUsingString(src) + Environment.NewLine);
+            ret.Insert(0, SharpIncludeGetUsingString(src, true) + Environment.NewLine);
         }
 
         return ret.ToString();
@@ -203,20 +247,44 @@
     string SharpIncludeGetPos(string src, string pos)
     {
         StringBuilder ret = new StringBuilder();
-        Match match = SharpIncludeDefines.SliceBlockRegex.Match(src);
-        while (match.Success)
+        if (pos.Length > 0 && pos[0] == '*')
         {
-            Group name = match.Groups[2];
-            if (pos.Length == 0 || pos.Equals(name.ToString()))
+            int con = 0;
+            Match match = SharpIncludeDefines.SliceClassRegex.Match(src);
+            while(match.Success)
             {
-                ret.Append(match.Groups[0].ToString() + Environment.NewLine);
+                con = match.Index + match.Groups[1].ToString().Length;
+                if(pos.Equals("*") || pos.Equals("*" + match.Groups[3].ToString()))
+                {
+                    string cls = SharpIncludeSearchBraces(match.Groups[5].ToString());
+                    cls = Regex.Replace(cls, SharpIncludeDefines.SharpIncludeStartDelim, "");
+                    cls = Regex.Replace(cls, SharpIncludeDefines.SharpIncludeEndDelim, "");
+                    ret.Append(match.Groups[1].ToString());
+                    ret.Append(cls);
+                    ret.Append(Environment.NewLine);
+                }
+                match = SharpIncludeDefines.SliceClassRegex.Match(src,con);
             }
-            match = match.NextMatch();
+            ret.Insert(0, "//<++" + Environment.NewLine);
+            ret.Append(Environment.NewLine + "//++>");
+        }
+        else 
+        {
+            Match match = SharpIncludeDefines.SliceBlockRegex.Match(src);
+            while (match.Success)
+            {
+                Group name = match.Groups[2];
+                if (pos.Length == 0 || pos.Equals(name.ToString()))
+                {
+                    ret.Append(match.Groups[0].ToString() + Environment.NewLine);
+                }
+                match = match.NextMatch();
+            }
         }
         return ret.ToString();
     }
 
-    string SharpIncludeGetUsingString(string src)
+    string SharpIncludeGetUsingString(string src, bool isimport)
     {
         StringBuilder ret = new StringBuilder();
         List<string> implist = new List<string>();
@@ -226,7 +294,7 @@
         while (match.Success)
         {
             Group grp = match.Groups[1];
-            if(implist.IndexOf(grp.ToString()) == -1)
+            if (implist.IndexOf(grp.ToString()) == -1)
             {
                 if (init)
                 {
@@ -236,22 +304,155 @@
                 {
                     ret.Append(Environment.NewLine);
                 }
-                ret.Append(SharpIncludeDefines.StartDelim + "@ import namespace=\"" + grp.ToString() + "\" " + SharpIncludeDefines.EndDelim);
+                if (isimport) 
+                {
+                    ret.Append(SharpIncludeDefines.StartDelim + "@ import namespace=\"" + grp.ToString() + "\" " + SharpIncludeDefines.EndDelim);
+                }
+                else
+                {
+                    ret.Append(match.Groups[0].ToString());
+                }
                 implist.Add(grp.ToString());
-            }  
+            }
             match = match.NextMatch();
         }
         return ret.ToString();
     }
 
-    string SharpIncludeGetUsingFile(string file)
+    string SharpIncludeGetUsingFile(string file, bool isimport)
     {
-        return SharpIncludeGetUsingString(SharpIncludeReadFile(file));
+        return SharpIncludeGetUsingString(SharpIncludeReadFile(file), isimport);
     }
 
     string SharpIncludeReadFile(string file)
     {
-        System.Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
+        Environment.CurrentDirectory = Path.GetDirectoryName(Host.TemplateFile);
         return File.ReadAllText(file);
     }
+
+    string SharpIncludeSearchBraces(string src)
+    {
+        int indent = 0;
+        bool isAsterisk = false;
+        bool isSlash = false;
+        bool isBlockComment = false;
+        bool isLineComment = false;
+        bool isDoubleQuote = false;
+        bool isSingleQuote = false;
+        bool isBackSlash = false;
+
+        for (int i = 0; i < src.Length; i++)
+        {
+            switch (src[i])
+            {
+                case '*':
+                    if (isSlash && !isBlockComment && !isLineComment && !isDoubleQuote && !isSingleQuote)
+                    {
+                        isSlash = false;
+                        isBlockComment = true;
+                    }
+                    else
+                    {
+                        isAsterisk = true;
+                    }
+                    break;
+                case '/':
+                    if (isAsterisk && isBlockComment && !isLineComment && !isDoubleQuote && !isSingleQuote)
+                    {
+                        isAsterisk = false;
+                        isBlockComment = false;
+                    }
+                    else if (isSlash && !isBlockComment && !isDoubleQuote && !isSingleQuote)
+                    {
+                        isSlash = false;
+                        isLineComment = true;
+                    }
+                    else
+                    {
+                        isSlash = true;
+                    }
+                    break;
+                case '\r':
+                case '\n':
+                    isLineComment = false;
+                    break;
+                case '"':
+                    if (!isBlockComment && !isLineComment && !isBackSlash)
+                    {
+                        if (!isDoubleQuote)
+                        {
+                            isDoubleQuote = true;
+                        }
+                        else
+                        {
+                            isDoubleQuote = false;
+                        }
+                    }
+                    else if (isBackSlash)
+                    {
+                        isBackSlash = false;
+                    }
+                    break;
+                case '\'':
+                    if (!isBlockComment && !isLineComment && !isBackSlash)
+                    {
+                        if (!isSingleQuote)
+                        {
+                            isSingleQuote = true;
+                        }
+                        else
+                        {
+                            isSingleQuote = false;
+                        }
+                    }
+                    else if (isBackSlash)
+                    {
+                        isBackSlash = false;
+                    }
+                    break;
+                case '\\':
+                    if (!isBlockComment && !isLineComment && (isDoubleQuote || isSingleQuote))
+                    {
+                        if (!isBackSlash)
+                        {
+                            isBackSlash = true;
+                        }
+                        else
+                        {
+                            isBackSlash = false;
+                        }
+                    }
+                    break;
+                case '{':
+                    if (!isBlockComment && !isLineComment && !isDoubleQuote && !isSingleQuote)
+                    {
+                        indent++;
+                    }
+                    break;
+                case '}':
+                    if (!isBlockComment && !isLineComment && !isDoubleQuote && !isSingleQuote)
+                    {
+                        indent--;
+                        if (indent <= 0)
+                        {
+                            return src.Substring(0, i + 1);
+                        }
+                    }
+                    break;
+                default:
+                    isAsterisk = false;
+                    isSlash = false;
+                    isBackSlash = false;
+                    break;
+            }
+        }
+        return src;
+    }
+
+    void ClearAndWrite(string str)
+    {
+        GenerationEnvironment.Length = 0;
+        Write(str);
+    }
+
 #>
