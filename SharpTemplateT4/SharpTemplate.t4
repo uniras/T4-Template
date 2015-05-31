@@ -12,6 +12,7 @@
 #if !DISABLE_AUTOLOAD
         SharpTemplateT4Generate(this.Host);
 #endif
+
 #><#+
     delegate void SharpTemplateT4Event(ref StringBuilder Source);
 
@@ -154,4 +155,5 @@
         }
 
     }
+
 #>
