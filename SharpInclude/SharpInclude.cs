@@ -1,12 +1,31 @@
-﻿<#@ import namespace="System.Collections.Generic" #>
-<#@ import namespace="System.Collections.Specialized" #>
-<#@ import namespace="System.IO" #>
-<#@ import namespace="System.Text" #>
-<#@ import namespace="System.Text.RegularExpressions" #>
+﻿/*<# GenerationEnvironment.Length -= 2;/*/using/*/#><#@ import namespace="/**/System.Collections.Generic;//"#>
+/*<# GenerationEnvironment.Length -= 2;/*/using/*/#><#@ import namespace="/**/System.Collections.Specialized;//"#>
+/*<# GenerationEnvironment.Length -= 2;/*/using/*/#><#@ import namespace="/**/System.IO;//"#>
+/*<# GenerationEnvironment.Length -= 2;/*/using/*/#><#@ import namespace="/**/System.Text;//"#>
+/*<# GenerationEnvironment.Length -= 2;/*/using/*/#><#@ import namespace="/**/System.Text.RegularExpressions;//"#>
+/*<# GenerationEnvironment.Length -= 2;#>
+<#@ template debug="true" hostspecific="true" language="C#" #>
 <#
+    //<--
     SharpInclude.Initialize(Host);
-#>
-<#+
+    //-->
+    SharpIncludeSelfInit();
+//*///#><#+/*
+#if DEBUG
+using System;
+
+class SharpIncludeTemplate : Microsoft.VisualStudio.TextTemplating.TextTransformation
+{
+#pragma warning disable 0169, 0649
+    Microsoft.VisualStudio.TextTemplating.ITextTemplatingEngineHost Host;
+#pragma warning restore 0169, 0649
+
+    public override string TransformText()
+    {
+        return "";
+    }
+//*///#><#+
+    //<++
     static class SharpInclude
     {
         public static string SharpIncludeStartDelim = @"//<(\+\++|--+|\*\*+|@@+)";
@@ -521,4 +540,17 @@
         GenerationEnvironment.Length = 0;
         Write(str);
     }
-#>
+    //++>
+
+    void SharpIncludeSelfInit()
+    {
+        if (Path.GetFileName(Host.TemplateFile).Equals("SharpInclude.cs"))
+        {
+            Host.SetFileExtension(".t4");
+            ClearAndWrite(SharpInclude.Include());
+        }
+    }
+//*///#><#+/*
+}
+#endif
+//*///#>
