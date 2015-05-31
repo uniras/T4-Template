@@ -27,9 +27,10 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
 using System.Linq;
 using System.Drawing;
+//WindowsForms関連クラスを使うときはコメントを外す
+//using System.Windows.Forms;
 
 class $safeitemname$
 #if USET4CLASS
