@@ -1,0 +1,24 @@
+<VSTemplate Version="3.0.0" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" Type="Item">
+  <TemplateData>
+    <DefaultName>SharpTemplateT4.cs</DefaultName>
+    <Name>SharpTemplateT4</Name>
+    <Description>C#をスクリプト風に手軽にコーディングするためのテンプレートです。(T4関連クラスを使用できるようにしたもの)</Description>
+    <ProjectType>CSharp</ProjectType>
+    <SortOrder>10</SortOrder>
+    <Icon>__TemplateIcon.ico</Icon>
+  </TemplateData>
+  <TemplateContent>
+    <References>
+      <Reference>
+        <Assembly>Microsoft.VisualStudio.TextTemplating.12.0</Assembly>
+      </Reference>
+      <Reference>
+        <Assembly>Microsoft.VisualStudio.TextTemplating.Interfaces.10.0</Assembly>
+      </Reference>
+      <Reference>
+        <Assembly>Microsoft.VisualStudio.TextTemplating.Interfaces.11.0</Assembly>
+      </Reference>
+    </References>
+    <ProjectItem SubType="Code" CustomTool="TextTemplatingFileGenerator" TargetFileName="$fileinputname$.cs" ReplaceParameters="true">SharpScriptTemplate.cs</ProjectItem>
+  </TemplateContent>
+</VSTemplate>
