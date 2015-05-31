@@ -1,4 +1,5 @@
-﻿#region T4ディレクティブ設定
+﻿
+#region T4ディレクティブ設定
 /*
 <#@ template debug="false" hostspecific="true" language="C#" #>
 <#@ import namespace="System.IO" #>
@@ -53,12 +54,14 @@ class $safeitemname$
 
     //*///#><#+/*
 #region Mainメソッド
+#if USEMAIN
     public static void Main(string[] args)
     {
         $safeitemname$ s = new $safeitemname$();
         s.$safeitemname$_Start();
         s.FinalWrite();        
     }
+#endif
 #endregion
 #region ベースメソッド
 #if USET4CLASS

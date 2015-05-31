@@ -53,12 +53,14 @@ class $safeitemname$
 
     //*///#><#+/*
 #region Mainメソッド
+#if USEMAIN
     public static void Main(string[] args)
     {
         $safeitemname$ s = new $safeitemname$();
         s.$safeitemname$_Start();
         s.FinalWrite();        
     }
+#endif
 #endregion
 #region ベースメソッド
 #if USET4CLASS

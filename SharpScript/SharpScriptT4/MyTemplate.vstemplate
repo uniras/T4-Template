@@ -1,8 +1,8 @@
 <VSTemplate Version="3.0.0" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" Type="Item">
   <TemplateData>
-    <DefaultName>SharpTemplateT4.cs</DefaultName>
-    <Name>SharpTemplateT4</Name>
-    <Description>C#をスクリプト風に手軽にコーディングするためのテンプレートです。(T4関連クラスを使用できるようにしたもの)</Description>
+    <DefaultName>SharpScriptT4.cs</DefaultName>
+    <Name>SharpScriptT4</Name>
+    <Description>C#をスクリプトっぽく手軽にコーディングするためのテンプレートです。(T4関連クラスを使用できるようにしたもの)</Description>
     <ProjectType>CSharp</ProjectType>
     <SortOrder>10</SortOrder>
     <Icon>__TemplateIcon.ico</Icon>
