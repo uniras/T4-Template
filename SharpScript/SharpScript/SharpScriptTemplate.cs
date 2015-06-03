@@ -27,9 +27,10 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
 using System.Linq;
 using System.Drawing;
+//WindowsForms関連クラスを使用するときはコメントを外す
+//using System.Windows.Forms;
 
 class $safeitemname$
 #if USET4CLASS
@@ -52,12 +53,14 @@ class $safeitemname$
 
     //*///#><#+/*
 #region Mainメソッド
+#if USEMAIN
     public static void Main(string[] args)
     {
         $safeitemname$ s = new $safeitemname$();
         s.$safeitemname$_Start();
         s.FinalWrite();        
     }
+#endif
 #endregion
 #region ベースメソッド
 #if USET4CLASS
