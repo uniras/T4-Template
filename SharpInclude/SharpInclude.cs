@@ -204,7 +204,7 @@ class SharpIncludeTemplate : Microsoft.VisualStudio.TextTemplating.TextTransform
                 char postype;
                 string posname;
 
-                if (pos.Length > 0 && (pos[0] == '*' || pos[0] == '-' || pos[0] == '+'))
+                if (pos.Length > 0 && (pos[0] == '*' || pos[0] == '-' || pos[0] == '+' || pos[0] == '@' || pos[0] == '&'))
                 {
                     postype = pos[0];
                     posname = pos.Substring(1);
@@ -222,7 +222,13 @@ class SharpIncludeTemplate : Microsoft.VisualStudio.TextTemplating.TextTransform
                     Group type = match.Groups[1];
                     if (posname.Length == 0 || posname.Equals(name.ToString()))
                     {
-                        if (postype == ' ' || postype == type.ToString()[0])
+                        if (postype == '&')
+                        {
+                            ret.Append(match.Groups[4].ToString());
+                            ret.Insert(0, "//<@@" + NewLine);
+                            ret.Append(NewLine + "//@@>");
+                        }
+                        else if (postype == ' ' || postype == type.ToString()[0])
                         {
                             ret.Append(match.Groups[0].ToString() + NewLine);
                             if (posname.Length > 0) break;
